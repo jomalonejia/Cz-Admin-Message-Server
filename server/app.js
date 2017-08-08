@@ -1,4 +1,5 @@
 import Koa from 'koa';
+import jsonp from 'koa-jsonp'
 import bodyparser from 'koa-bodyparser'
 import config from './configs/config'
 import convert from 'koa-convert'
@@ -7,6 +8,7 @@ import WebSocket from 'ws'
 import url from 'url'
 import db from './component/mongo'
 import client from './component/redis'
+import Thread from './model/Thread'
 
 import api from './api'
 
@@ -45,15 +47,13 @@ function createWebSocketServer(server, onConnection, onMessage, onClose, onError
       console.log('[WebSocket] error: ' + err);
     };
   wss.on('connection', function (ws) {
-    let location = url.parse(ws.upgradeReq.url, true);
-    console.log('[WebSocketServer] connection: ' + location.href);
     ws.on('message', onMessage);
     ws.on('close', onClose);
     ws.on('error', onError);
-    if (location.pathname !== '/ws/chat') {
+    /*if (location.pathname !== '/ws/chat') {
       // close ws:
       ws.close(4000, 'Invalid URL');
-    }
+    }*/
     // check user:
     //ws.user = user;
     ws.wss = wss;
@@ -75,29 +75,49 @@ function createMessage(type,  data) {
 }
 
 function onConnect() {
-  let user = this.user;
+ /* let user = this.user;
   //let msg = createMessage('join', user, `${user.name} joined.`);
   let msg = 'xin ren lai le..'
   this.wss.broadcast(msg);
   // build user list:
- /* let users = this.wss.clients.map(function (client) {
+ /!* let users = this.wss.clients.map(function (client) {
     return client.user;
-  });*/
-  this.send(createMessage('list',  users));
+  });*!/
+  this.send(createMessage('list',  users));*/
 }
 
-function onMessage(message) {
-  console.log(message);
-  if (message && message.trim()) {
-    let msg = createMessage('chat', message.trim());
-    this.wss.broadcast(msg);
+function onMessage(messageStr) {
+  let message = JSON.parse(messageStr);
+  const newThread =  new Thread({
+    messages:[message]
+  });
+  if(message.threadId == null || message.threadId == undefined){
+    console.log('catch undefined.......');
+     /* try {
+        newThread.save(err => {
+          Object.assign(message,{threadId:newThread._id});
+          this.wss.broadcast(JSON.stringify(message));
+        });
+      } catch (err) {
+        console.log('error')
+      }*/
+    }else{
+    console.log('has threadid');
+    Thread.findOneAndUpdate(
+      {'_id':message.threadId},
+      { $push: {messages:message }},
+      {upsert:true},
+      (err) => {
+        console.log(err);
+      });
+      this.wss.broadcast(JSON.stringify(message));
   }
 }
 
 function onClose() {
-  let user = this.user;
+  /*let user = this.user;
   let msg = createMessage('left', 'is left.');
-  this.wss.broadcast(msg);
+  this.wss.broadcast(msg);*/
 }
 
 app.wss = createWebSocketServer(server, onConnect, onMessage, onClose);
