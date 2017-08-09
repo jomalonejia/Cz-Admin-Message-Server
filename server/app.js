@@ -91,6 +91,7 @@ function onMessage(messageStr) {
   const newThread =  new Thread({
     messages:[message]
   });
+  console.log(message)
   if(message.threadId == null || message.threadId == undefined){
     console.log('catch undefined.......');
      /* try {
@@ -102,7 +103,6 @@ function onMessage(messageStr) {
         console.log('error')
       }*/
     }else{
-    console.log('has threadid');
     Thread.findOneAndUpdate(
       {'_id':message.threadId},
       { $push: {messages:message }},
