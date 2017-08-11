@@ -88,20 +88,30 @@ function onConnect() {
 
 function onMessage(messageStr) {
   let message = JSON.parse(messageStr);
-  const newThread =  new Thread({
+ /* const newThread =  new Thread({
+    unRead:message.sentTo,
     messages:[message]
-  });
+  });*/
   console.log(message)
-  if(message.threadId == null || message.threadId == undefined){
+
+  Thread.findOneAndUpdate(
+    {'_id':message.threadId},
+    {unRead:message.sentTo, $push: {messages:message }},
+    {upsert:true},
+    (err) => {
+      console.log(err);
+    });
+  this.wss.broadcast(JSON.stringify(message));
+  /*if(message.threadId == null || message.threadId == undefined){
     console.log('catch undefined.......');
-     /* try {
+     /!* try {
         newThread.save(err => {
           Object.assign(message,{threadId:newThread._id});
           this.wss.broadcast(JSON.stringify(message));
         });
       } catch (err) {
         console.log('error')
-      }*/
+      }*!/
     }else{
     Thread.findOneAndUpdate(
       {'_id':message.threadId},
@@ -111,7 +121,7 @@ function onMessage(messageStr) {
         console.log(err);
       });
       this.wss.broadcast(JSON.stringify(message));
-  }
+  }*/
 }
 
 function onClose() {
