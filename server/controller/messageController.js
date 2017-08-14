@@ -23,6 +23,7 @@ class MessageController {
             }
           })
           .then(res => {
+
             ctx.body = res
           })
           .catch(err => console.log(err))

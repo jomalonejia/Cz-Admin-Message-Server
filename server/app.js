@@ -94,8 +94,8 @@ function onMessage(messageStr) {
   });*/
   console.log(message)
 
-  Thread.findOneAndUpdate(
-    {'_id':message.threadId},
+  Thread.findByIdAndUpdate(
+    message.threadId,
     {unRead:message.sentTo, $push: {messages:message }},
     {upsert:true},
     (err) => {
